@@ -1,0 +1,36 @@
+参考：Zabbxiの例）
+_下記のサイトにzabbix系のrpmが公開されている_
+http://repo.zabbix.com/zabbix/2.4/rhel/6/x86_64/
+そこからagent登録に必要な下記の３つをGETする
+{code}
+wget http://repo.zabbix.com/zabbix/2.4/rhel/6/x86_64/zabbix-agent-2.4.2-1.el6.x86_64.rpm
+wget http://repo.zabbix.com/zabbix/2.4/rhel/6/x86_64/zabbix-2.4.2-1.el6.x86_64.rpm
+wget http://repo.zabbix.com/zabbix/2.4/rhel/6/x86_64/zabbix-release-2.4-1.el6.noarch.rpm
+{code}
+をダウンロードして
+
+[root@zabbix1-dc1 yum-repo]# pwd
+#cd /var/www/html/yum-repo
+#mkdir -p zabbix
+３つのrpmファイルを zabbixフォルダにコピー
+
+#createrepo -v /var/www/html/yum-repo/zabbix
+{code}
+
+
+—zabbix.repo--
+[zabbix]
+name=Zabbix Official Repository - $basearch
+#baseurl=http://repo.zabbix.com/zabbix/2.4/rhel/6/$basearch/
+baseurl=file:///mnt/local_repo/zabbix/
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-ZABBIX
+
+[zabbix-non-supported]
+name=Zabbix Official Repository non-supported - $basearch
+#baseurl=http://repo.zabbix.com/non-supported/rhel/6/$basearch/
+baseurl=file:///mnt/local_repo/zabbix/
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-ZABBIX
+gpgcheck=1
