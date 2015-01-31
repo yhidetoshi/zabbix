@@ -1,0 +1,75 @@
+参考サイト：http://oki2a24.com/2013/11/08/zabbix-mysql/
+
+Mysqlのテンプレートで監視する方法
+http://qiita.com/iwaim@github/items/8443acf4a4917e5b21fb
+
+
+zabbix-agent側で設定。
+----
+mkdir /var/lib/zabbix
+[root@zabbix1-dc1 mysql]# vim /var/lib/zabbix/.my.cnf
+[root@zabbix1-dc1 mysql]# chmod 400 /var/lib/zabbix/.my.cnf
+[root@zabbix1-dc1 mysql]# chown -R zabbix:zabbix /var/lib/zabbix
+----
+
+・MySQLにユーザと権限追加
+CREATE USER zabbix IDENTIFIED BY 'apigw0033’;
+grant process on *.* TO 'zabbix’@'%';
+FLUSH PRIVILEGES;
+
+※select権限だけだとステータスしか有効にならない。
+
+上記の設定と下記を実施。
+root@ms1-dc1 ~]# mysqladmin ping -u root -p
+Enter password:
+mysqld is alive
+[root@ms1-dc1 ~]# mysqladmin ping -u zabbix -p
+Enter password:
+mysqld is alive
+
+
+
+監視対象のmysqlにzabbixユーザを追加
+databasesの『devportal』に追加。
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| devportal          |
+| mysql              |
+| performance_schema |
++--------------------+
+4 rows in set (0.00 sec)
+
+
+mysql> SELECT User, Host FROM mysql.user;
++-----------+-----------+
+| User      | Host      |
++-----------+-----------+
+| apigee    | %         |
+| devportal | %         |
+| repl      | %         |
+| root      | 127.0.0.1 |
+| root      | ::1       |
+|           | localhost |
+| root      | localhost |
+| zabbix    | localhost |
+|           | ms1-dc1   |
+| root      | ms1-dc1   |
++-----------+-----------+
+10 rows in set (0.00 sec)
+
+SElinuxは停止。
+
+『is not suitable for value type [Numeric (float)]』のエラーが表示されていたので
+下記を設定変更。
+#/etc/zabbix/zabbix_agentd.d
+⇒ userparameter_mysql.conf
+
+(変更前)#UserParameter=mysql.ping,HOME=/var/lib/zabbix mysqladmin ping | grep -c alive
+（変更後）UserParameter=mysql.ping,HOME=/var/lib/zabbix mysqladmin ping 2>/dev/null | grep -c alive
+⇒　2>/dev/null　を追加。
+
+zabbix-agentを再起動
+
